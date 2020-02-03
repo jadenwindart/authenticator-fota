@@ -3,6 +3,7 @@ from app import app , db
 from app.models.user import Device
 import hmac
 from hashlib import sha256
+import json
 
 def register():
     if request.method == 'POST':
@@ -22,3 +23,21 @@ def register():
         return response
     else:
         abort(403)
+
+def get_credentials():
+    if request.method == 'GET':
+        data = request.json
+        identifier = data['identifier']
+        device = Device.query.filter_by(device_identifier=identifier)
+        device_json = json.dumps({
+            'identifier' : identifier,
+            'password' : device.password
+        })
+        enc_json = sha256(device_json)
+        response = app.response_class(
+            response='credentials:' + enc_json,
+            status=200,
+            mimetype='application/json'
+        )
+        return response
+        
