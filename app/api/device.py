@@ -1,9 +1,10 @@
 from flask import request , abort
 from app import app , db
-from app.models.user import Device
+from app.models.user import Device , FotaSession
 import hmac
 from hashlib import sha256
 import json
+import secrets
 
 def register():
     if request.method == 'POST':
@@ -33,11 +34,34 @@ def get_credentials():
             'identifier' : identifier,
             'password' : device.password
         })
-        enc_json = sha256(device_json)
+        salt = secrets.token_urlsafe(32)
+        enc_json = hmac.new(salt,device_json,sha256)
         response = app.response_class(
-            response='credentials:' + enc_json,
+            response=json.dumps({
+                'identifier' : device.device_identifier,
+                'password' : enc_json
+                }),
             status=200,
             mimetype='application/json'
         )
         return response
+
+def authenticate_device():
+    if request.method == 'POST':
+        data = request.json
+        identifier = data['identifier']
+        request_password = data['password']
+        device = Device.query.filter_by(device_identifier=identifier)
+        device_dumps = json.dumps({
+            'identifier' : device.device_identifier,
+            'password' : device.password
+        })
+        fota_session = FotaSession.query.filter_by(password=request_password)
+        if fota_session.password == hmac.new(fota_session.salt,device_dumps,sha256):
+            response = app.response_class(
+                status=200,
+                mimetype='application/json'
+            )
+            return response
+
         
