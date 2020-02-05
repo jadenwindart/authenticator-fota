@@ -12,7 +12,7 @@ def register():
         identifier = data['identifier']
         password = data['password']
         key = app.config.get('SECRET_KEY')
-        new_password = hmac.new(key,password,sha256)
+        new_password = hmac.new(key.encode('ASCII'),password.encode('ASCII'),sha256)
         new_device = Device(device_identifier=identifier,password=new_password)
         db.session.add(new_device)
         db.session.commit()
@@ -35,7 +35,7 @@ def get_credentials():
             'password' : device.password
         })
         salt = secrets.token_urlsafe(32)
-        enc_json = hmac.new(salt,device_json,sha256)
+        enc_json = hmac.new(salt.encode('ASCII'),device_json.encode('ASCII'),sha256)
         response = app.response_class(
             response=json.dumps({
                 'identifier' : device.device_identifier,
@@ -57,7 +57,7 @@ def authenticate_device():
             'password' : device.password
         })
         fota_session = FotaSession.query.filter_by(password=request_password)
-        if fota_session.password == hmac.new(fota_session.salt,device_dumps,sha256):
+        if fota_session.password == hmac.new(fota_session.salt.encode('ASCII'),device_dumps.encode('ASCII'),sha256):
             response = app.response_class(
                 status=200,
                 mimetype='application/json'
