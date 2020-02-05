@@ -13,7 +13,7 @@ def register():
         password = data['password']
         key = app.config.get('SECRET_KEY')
         new_password = hmac.new(key.encode('ASCII'),password.encode('ASCII'),sha256)
-        new_device = Device(device_identifier=identifier,password=new_password)
+        new_device = Device(device_identifier=identifier,password=new_password.hexdigest())
         db.session.add(new_device)
         db.session.commit()
         response = app.response_class(
@@ -39,7 +39,7 @@ def get_credentials():
         response = app.response_class(
             response=json.dumps({
                 'identifier' : device.device_identifier,
-                'password' : enc_json
+                'password' : enc_json.hexdigest()
                 }),
             status=200,
             mimetype='application/json'
@@ -57,11 +57,14 @@ def authenticate_device():
             'password' : device.password
         })
         fota_session = FotaSession.query.filter_by(password=request_password)
-        if fota_session.password == hmac.new(fota_session.salt.encode('ASCII'),device_dumps.encode('ASCII'),sha256):
+        received_password = hmac.new(fota_session.salt.encode('ASCII'),device_dumps.encode('ASCII'),sha256)
+        if hmac.compare_digest(fota_session.password,received_password.hexdigest()):
             response = app.response_class(
                 status=200,
                 mimetype='application/json'
             )
             return response
+        else:
+            abort(401)
 
         
