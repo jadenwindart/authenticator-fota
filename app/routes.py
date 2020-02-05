@@ -5,6 +5,6 @@ from .api.device import register,get_credentials,authenticate_device
 def index():
     return "Hello World"
 
-app.add_url_rule('/register','register',register)
-app.add_url_rule('/credentials','credentials',get_credentials)
-app.add_url_rule('/authenticate','authenticate',authenticate_device)
+app.add_url_rule('/register','register',register,methods='POST')
+app.add_url_rule('/credentials','credentials',get_credentials,methods='GET')
+app.add_url_rule('/authenticate','authenticate',authenticate_device,methods='POST')
