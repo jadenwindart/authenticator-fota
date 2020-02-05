@@ -29,13 +29,16 @@ def get_credentials():
     if request.method == 'GET':
         data = request.json
         identifier = data['identifier']
-        device = Device.query.filter_by(device_identifier=identifier)
+        device = Device.query.filter_by(device_identifier=identifier).first()
         device_json = json.dumps({
             'identifier' : identifier,
             'password' : device.password
         })
         salt = secrets.token_urlsafe(32)
         enc_json = hmac.new(salt.encode('ASCII'),device_json.encode('ASCII'),sha256)
+        fota_session = FotaSession(salt=salt,password=enc_json.hexdigest())
+        db.session.add(fota_session)
+        db.session.commit()
         response = app.response_class(
             response=json.dumps({
                 'identifier' : device.device_identifier,
@@ -51,12 +54,12 @@ def authenticate_device():
         data = request.json
         identifier = data['identifier']
         request_password = data['password']
-        device = Device.query.filter_by(device_identifier=identifier)
+        device = Device.query.filter_by(device_identifier=identifier).first()
         device_dumps = json.dumps({
             'identifier' : device.device_identifier,
             'password' : device.password
         })
-        fota_session = FotaSession.query.filter_by(password=request_password)
+        fota_session = FotaSession.query.filter_by(password=request_password).first()
         received_password = hmac.new(fota_session.salt.encode('ASCII'),device_dumps.encode('ASCII'),sha256)
         if hmac.compare_digest(fota_session.password,received_password.hexdigest()):
             response = app.response_class(
