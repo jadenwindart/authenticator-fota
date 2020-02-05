@@ -26,4 +26,4 @@ class FotaSession(db.Model):
     id = db.Column(db.Integer , primary_key=True)
     salt = db.Column(db.String(32))
     password = db.Column(db.String(255))
-    timestamp = db.Column(db.DateTime,nullable=False,default=datetime.utcnow,onupdate=datetime.utcnow)
+    timestamp = db.Column(db.DateTime,nullable=False,default=datetime.datetime.utcnow(),onupdate=datetime.datetime.utcnow())
