@@ -8,3 +8,4 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = 'postgres://{user}:{pw}@{url}:{port}/{db}'.format(user=POSTGRES_USER,pw=POSTGRES_PW,url=POSTGRES_URL,db=POSTGRES_DB,port=POSTGRES_PORT)
     # SQLALCHEMY_DATABASE_URI = 'postgres://jlsrslgzboshqr:995f1afd463ab357c001ce5eed50561f751612b63a6b06ad45c7292f728c3708@ec2-54-174-229-152.compute-1.amazonaws.com:5432/dc2u0ijmqe41u3'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    DEBUG = True
