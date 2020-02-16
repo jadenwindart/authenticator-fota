@@ -11,17 +11,25 @@ def register():
         data = request.json
         identifier = data['identifier']
         password = data['password']
-        key = app.config.get('SECRET_KEY')
-        new_password = hmac.new(key.encode('ASCII'),password.encode('ASCII'),sha256)
-        new_device = Device(device_identifier=identifier,password=new_password.hexdigest())
-        db.session.add(new_device)
-        db.session.commit()
-        response = app.response_class(
-            response ='Device Has Been Added',
-            status=200,
-            mimetype='application/json'
-        )
-        return response
+        if Device.query.filter_by(device_identifier=identifier):
+            key = app.config.get('SECRET_KEY')
+            new_password = hmac.new(key.encode('ASCII'),password.encode('ASCII'),sha256)
+            new_device = Device(device_identifier=identifier,password=new_password.hexdigest())
+            db.session.add(new_device)
+            db.session.commit()
+            response = app.response_class(
+                response ='Device Has Been Added',
+                status=200,
+                mimetype='application/json'
+            )
+            return response
+        else:
+            response = app.response_class(
+                response ='Device Already Exist',
+                status=200,
+                mimetype='application/json'
+            )
+            return response
     else:
         abort(403)
 
