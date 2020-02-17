@@ -1,6 +1,6 @@
 from flask import request , abort
 from app import app , db
-from app.models.user import Device , FotaSession
+from app.models.user import Device , FotaSession , DeviceMQTT
 import hmac
 from hashlib import sha256
 import json
@@ -11,11 +11,15 @@ def register():
         data = request.json
         identifier = data['identifier']
         password = data['password']
-        if Device.query.filter_by(device_identifier=identifier):
+        device = Device.query.filter_by(device_identifier=identifier)
+        if device:
             key = app.config.get('SECRET_KEY')
             new_password = hmac.new(key.encode('ASCII'),password.encode('ASCII'),sha256)
             new_device = Device(device_identifier=identifier,password=new_password.hexdigest())
             db.session.add(new_device)
+            rand_string = secrets.token_urlsafe(8)
+            device_mqtt = DeviceMQTT(topic=rand_string,device=new_device)
+            db.session.add(device_mqtt)
             db.session.commit()
             response = app.response_class(
                 response ='Device Has Been Added',
@@ -24,8 +28,12 @@ def register():
             )
             return response
         else:
+            device_mqtt = DeviceMQTT.query.filter_by(device=device).first()
             response = app.response_class(
-                response ='Device Already Exist',
+                response =json.dumps({
+                    'status' : 'Device Already Exist',
+                    'mqtt_topic' : device_mqtt.topic
+                }),
                 status=200,
                 mimetype='application/json'
             )
