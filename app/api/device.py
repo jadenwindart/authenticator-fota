@@ -11,14 +11,14 @@ def register():
         data = request.json
         identifier = data['identifier']
         password = data['password']
-        device = Device.query.filter_by(device_identifier=identifier)
-        if device:
+        device = Device.query.filter_by(device_identifier=identifier).first()
+        if not bool(device):
             key = app.config.get('SECRET_KEY')
             new_password = hmac.new(key.encode('ASCII'),password.encode('ASCII'),sha256)
             new_device = Device(device_identifier=identifier,password=new_password.hexdigest())
             db.session.add(new_device)
             rand_string = secrets.token_urlsafe(8)
-            device_mqtt = DeviceMQTT(topic=rand_string,device=new_device)
+            device_mqtt = DeviceMQTT(topic=rand_string,device=new_device.id)
             db.session.add(device_mqtt)
             db.session.commit()
             response = app.response_class(
@@ -28,8 +28,8 @@ def register():
             )
             return response
         else:
-            device_mqtt = DeviceMQTT.query.filter_by(device=device).first()
-            if device_mqtt:
+            device_mqtt = DeviceMQTT.query.filter_by(device=device.id).first()
+            if bool(device_mqtt):
                 response = app.response_class(
                     response =json.dumps({
                         'status' : 'Device Already Exist',
@@ -40,7 +40,7 @@ def register():
                 )
             else:
                 rand_string = secrets.token_urlsafe(8)
-                device_mqtt = DeviceMQTT(topic=rand_string,device=new_device)
+                device_mqtt = DeviceMQTT(topic=rand_string,device=device.id)
                 db.session.add(device_mqtt)
                 db.session.commit()
                 response = app.response_class(
@@ -69,10 +69,12 @@ def get_credentials():
         fota_session = FotaSession(salt=salt,password=enc_json.hexdigest())
         db.session.add(fota_session)
         db.session.commit()
+        device_mqtt = DeviceMQTT.query.filter_by(device=device.id).first()
         response = app.response_class(
             response=json.dumps({
                 'identifier' : device.device_identifier,
-                'password' : enc_json.hexdigest()
+                'password' : enc_json.hexdigest(),
+                'mqtt_session' : device_mqtt.topic
                 }),
             status=200,
             mimetype='application/json'
