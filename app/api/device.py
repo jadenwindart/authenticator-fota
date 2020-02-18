@@ -29,14 +29,28 @@ def register():
             return response
         else:
             device_mqtt = DeviceMQTT.query.filter_by(device=device).first()
-            response = app.response_class(
-                response =json.dumps({
-                    'status' : 'Device Already Exist',
-                    'mqtt_topic' : device_mqtt.topic
-                }),
-                status=200,
-                mimetype='application/json'
-            )
+            if device_mqtt:
+                response = app.response_class(
+                    response =json.dumps({
+                        'status' : 'Device Already Exist',
+                        'mqtt_topic' : device_mqtt.topic
+                    }),
+                    status=200,
+                    mimetype='application/json'
+                )
+            else:
+                rand_string = secrets.token_urlsafe(8)
+                device_mqtt = DeviceMQTT(topic=rand_string,device=new_device)
+                db.session.add(device_mqtt)
+                db.session.commit()
+                response = app.response_class(
+                    response =json.dumps({
+                        'status' : 'Device Already Exist',
+                        'mqtt_topic' : device_mqtt.topic
+                    }),
+                    status=200,
+                    mimetype='application/json'
+                )
             return response
     else:
         abort(403)
