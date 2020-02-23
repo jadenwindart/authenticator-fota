@@ -86,6 +86,7 @@ def authenticate_device():
         data = request.json
         identifier = data['identifier']
         request_password = data['password']
+        print(identifier + " || " + request_password)
         device = Device.query.filter_by(device_identifier=identifier).first()
         device_dumps = json.dumps({
             'identifier' : device.device_identifier,
