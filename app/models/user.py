@@ -20,6 +20,7 @@ class Client(db.Model):
 class Permission(db.Model):
     id = db.Column(db.Integer , primary_key=True)
     client = db.Column(db.Integer , db.ForeignKey('client.id'))
+    device = db.Column(db.Integer , db.ForeignKey('device.id'))
     permission = db.Column(db.Integer)
 
 class FotaSession(db.Model):

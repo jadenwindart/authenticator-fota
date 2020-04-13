@@ -1,12 +1,13 @@
-from flask import request , abort
+from flask import request , abort , session , jsonify
 from app import app , db
-from app.models.user import Device , FotaSession , DeviceMQTT
+from app.models.user import Device , FotaSession , DeviceMQTT , Permission
 import hmac
 from hashlib import sha256
 import json
 import secrets
+from .decorator import token_required
 
-def register():
+def register_device():
     if request.method == 'POST':
         data = request.json
         identifier = data['identifier']
@@ -22,7 +23,10 @@ def register():
             db.session.add(device_mqtt)
             db.session.commit()
             response = app.response_class(
-                response ='Device Has Been Added',
+                response =json.dumps({
+                        'status' : 'Device Has Been Added',
+                        'mqtt_topic' : device_mqtt.topic
+                    }),
                 status=200,
                 mimetype='application/json'
             )
@@ -55,7 +59,8 @@ def register():
     else:
         abort(403)
 
-def get_credentials():
+@token_required
+def get_credentials(current_user):
     if request.method == 'GET':
         data = request.json
         identifier = data['identifier']
@@ -103,4 +108,27 @@ def authenticate_device():
         else:
             abort(401)
 
-        
+@token_required
+def get_device_list(current_user):
+
+    def get_device_identifier(id):
+        device = Device.query.filter_by(id=id).first()
+        return device.device_identifier
+
+    if request.method == 'GET':
+        if current_user:
+            permitted = Permission.query.filter_by(client=current_user.id).all()
+            device_id = [get_device_identifier(x.device) for x in permitted]
+            message = None
+            if device_id:
+                message = json.dumps({
+                    "device" : device_id
+                })
+            else:
+                message = json.dumps({})
+            return app.response_class(
+                status = 200,
+                response=message,
+                mimetype='application/json'
+            )
+        abort(400)
