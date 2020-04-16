@@ -147,4 +147,4 @@ def close_session(current_user):
         session = FotaSession.query.filter_by(client=current_user.id).delete()
         print(session)
         db.session.commit()
-        abort(200)
+        return app.response_class(status=200)
