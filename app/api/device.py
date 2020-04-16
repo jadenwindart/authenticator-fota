@@ -144,7 +144,7 @@ def get_device_list(current_user):
 @token_required
 def close_session(current_user):
     if request.method == 'POST':
-        data = request.json
         session = FotaSession.query.filter_by(client=current_user.id).delete()
+        print(session)
         db.session.commit()
         abort(200)
