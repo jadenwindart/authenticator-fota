@@ -145,8 +145,6 @@ def get_device_list(current_user):
 def close_session(current_user):
     if request.method == 'POST':
         data = request.json
-        identifier = data['identifier']
-        device = Device.query.filter_by(device_identifier=identifier).first()
-        session = FotaSession.query.filter_by(device=device,client=current_user).delete()
+        session = FotaSession.query.filter_by(client=current_user).delete()
         db.session.commit()
         abort(200)
