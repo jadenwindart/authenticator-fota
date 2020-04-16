@@ -25,6 +25,8 @@ class Permission(db.Model):
 
 class FotaSession(db.Model):
     id = db.Column(db.Integer , primary_key=True)
+    client = db.Column(db.Integer , db.ForeignKey('client.id'))
+    device = db.Column(db.Integer , db.ForeignKey('device.id'))
     salt = db.Column(db.String(128))
     password = db.Column(db.String(255))
     timestamp = db.Column(db.DateTime,nullable=False,default=datetime.datetime.utcnow(),onupdate=datetime.datetime.utcnow())
