@@ -69,7 +69,7 @@ def get_credentials(current_user):
             'identifier' : identifier,
             'password' : device.password
         })
-        curr_sess = FotaSession.query.filter_by(device=device).first()
+        curr_sess = FotaSession.query.filter_by(device=device.id).first()
         if curr_sess:
             return app.response_class(
                 response=json.dumps({
@@ -79,7 +79,7 @@ def get_credentials(current_user):
             )
         salt = secrets.token_urlsafe(32)
         enc_json = hmac.new(salt.encode('ASCII'),device_json.encode('ASCII'),sha256)
-        fota_session = FotaSession(salt=salt,client=current_user,device=device,password=enc_json.hexdigest())
+        fota_session = FotaSession(salt=salt,client=current_user.id,device=device.id,password=enc_json.hexdigest())
         db.session.add(fota_session)
         db.session.commit()
         device_mqtt = DeviceMQTT.query.filter_by(device=device.id).first()
@@ -105,7 +105,7 @@ def authenticate_device():
             'identifier' : device.device_identifier,
             'password' : device.password
         })
-        fota_session = FotaSession.query.filter_by(device=device,password=request_password).first()
+        fota_session = FotaSession.query.filter_by(device=device.id,password=request_password).first()
         received_password = hmac.new(fota_session.salt.encode('ASCII'),device_dumps.encode('ASCII'),sha256)
         if hmac.compare_digest(fota_session.password,received_password.hexdigest()):
             response = app.response_class(
@@ -145,6 +145,6 @@ def get_device_list(current_user):
 def close_session(current_user):
     if request.method == 'POST':
         data = request.json
-        session = FotaSession.query.filter_by(client=current_user).delete()
+        session = FotaSession.query.filter_by(client=current_user.id).delete()
         db.session.commit()
         abort(200)
