@@ -30,6 +30,7 @@ class FotaSession(db.Model):
     salt = db.Column(db.String(128))
     password = db.Column(db.String(255))
     timestamp = db.Column(db.DateTime,nullable=False,default=datetime.datetime.utcnow(),onupdate=datetime.datetime.utcnow())
+    used = db.Column(db.Boolean,nullable=False,default=False)
 
 class DeviceMQTT(db.Model):
     id = db.Column(db.Integer , primary_key=True)

@@ -106,13 +106,16 @@ def authenticate_device():
             'password' : device.password
         })
         fota_session = FotaSession.query.filter_by(device=device.id,password=request_password).first()
-        received_password = hmac.new(fota_session.salt.encode('ASCII'),device_dumps.encode('ASCII'),sha256)
-        if hmac.compare_digest(fota_session.password,received_password.hexdigest()):
-            response = app.response_class(
-                status=200,
-                mimetype='application/json'
-            )
-            return response
+        if(not fota_session.used):
+            received_password = hmac.new(fota_session.salt.encode('ASCII'),device_dumps.encode('ASCII'),sha256)
+            if hmac.compare_digest(fota_session.password,received_password.hexdigest()):
+                fota_session.used = True
+                db.session.commit()
+                response = app.response_class(
+                    status=200,
+                    mimetype='application/json'
+                )
+                return response
         else:
             abort(401)
 
